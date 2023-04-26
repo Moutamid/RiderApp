@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/map_nav"
+        android:title="Map"
+        android:icon="@drawable/round_map_24"/>
+
+    <item android:id="@+id/journey_nav"
+        android:icon="@drawable/round_view_list_24"
+        android:title="Past Journeys"/>
+</menu>
