@@ -5,10 +5,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +14,6 @@ import android.widget.Toast;
 
 import com.fxn.stash.Stash;
 import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -27,7 +24,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.moutamid.riderapp.R;
 import com.moutamid.riderapp.database.RoomDB;
 import com.moutamid.riderapp.databinding.FragmentMapsBinding;
-import com.moutamid.riderapp.models.HistoryModel;
 import com.moutamid.riderapp.models.JourneysModel;
 import com.moutamid.riderapp.models.UserModel;
 import com.moutamid.riderapp.utlis.Constants;
@@ -108,13 +104,12 @@ public class MapsFragment extends Fragment {
         UserModel userModel = user.get(user.size()-1);
         coins = user.get(user.size()-1).getCoins();
 
-        HistoryModel model = (HistoryModel) Stash.getObject(Constants.HISTORY, HistoryModel.class);
-        if (model != null){
+        String s = Stash.getString(Constants.START);
+        String e = Stash.getString(Constants.END);
+        if (!s.isEmpty() && !e.isEmpty()) {
             binding.message.setText("Your Journey is Started. You can end your journey any time");
             binding.start.setVisibility(View.GONE);
             binding.end.setVisibility(View.VISIBLE);
-        } else {
-            Toast.makeText(requireContext(), "Hello", Toast.LENGTH_SHORT).show();
         }
 
         binding.start.setOnClickListener(v -> {
@@ -124,10 +119,6 @@ public class MapsFragment extends Fragment {
                         .setMessage("This Journey cost 5 coins.")
                         .setPositiveButton("Yes", (dialog, which) -> {
                             if (coins >= 5) {
-
-                                HistoryModel historyModel = new HistoryModel(markerA, markerB);
-                                Stash.put(Constants.HISTORY, historyModel);
-
                                 database.userDAO().update(userModel.getID(), (coins-5) );
 
                                 new Handler().postDelayed(() -> {
@@ -160,7 +151,6 @@ public class MapsFragment extends Fragment {
             binding.end.setVisibility(View.GONE);
             Stash.clear(Constants.START);
             Stash.clear(Constants.END);
-            Stash.clear(Constants.HISTORY);
         });
 
         return binding.getRoot();
