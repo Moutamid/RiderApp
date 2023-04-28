@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.app.AlertDialog;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -38,12 +39,10 @@ public class MapsFragment extends Fragment {
     String markerB_Name = "";
     FragmentMapsBinding binding;
     int coins = 0;
-
+    Location loc1 = new Location("");
+    Location loc2 = new Location("");
+    float distanceInMeters;
     private OnMapReadyCallback callback = googleMap -> {
-
-        BitmapDescriptor defaultIcon = BitmapDescriptorFactory.fromResource(R.drawable.location_default);
-        BitmapDescriptor startIcon = BitmapDescriptorFactory.fromResource(R.drawable.location_start);
-        BitmapDescriptor endIcon = BitmapDescriptorFactory.fromResource(R.drawable.location_start);
 
         LatLng hungry = new LatLng(47.5333, 21.6333);
         LatLng parkolo = new LatLng(47.521024288430404, 21.62947502487398);
@@ -65,25 +64,37 @@ public class MapsFragment extends Fragment {
 
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(hungry));
 
+
         googleMap.setOnMarkerClickListener(marker -> {
             if (markerA == null) {
                 // First marker selected
                 markerA = marker;
                 markerA_Name = marker.getTitle();
+                loc1.setLatitude(markerA.getPosition().latitude);
+                loc1.setLongitude(markerA.getPosition().longitude);
                 Stash.put(Constants.START, markerA_Name);
                 binding.message.setText("Select Second Marker");
             } else if (markerB == null) {
                 // Second marker selected
-                markerB = marker;
-                markerB_Name = marker.getTitle();
-                Stash.put(Constants.END, markerB_Name);
-                binding.message.setText("Both markers selected, You can now start your journey");
+                if (marker == markerA){
+                    binding.message.setText("Please Select another location... You select the same location as the start location");
+                } else {
+                    markerB = marker;
+                    markerB_Name = marker.getTitle();
+                    loc2.setLatitude(markerB.getPosition().latitude);
+                    loc2.setLongitude(markerB.getPosition().longitude);
+                    Stash.put(Constants.END, markerB_Name);
+                    distanceInMeters = loc1.distanceTo(loc2);
+                    binding.message.setText("Both markers selected, You can now start your journey ");
+                }
             } else {
                 // Two markers already selected, clear selections
                 markerA = null;
                 markerB = null;
                 markerA_Name = "";
                 markerB_Name = "";
+                loc1 = new Location("");
+                loc2 = new Location("");
                 binding.message.setText("Markers cleared! ... Select First Marker");
                 //Toast.makeText(requireContext(), "Markers cleared", Toast.LENGTH_SHORT).show();
             }
@@ -113,14 +124,17 @@ public class MapsFragment extends Fragment {
         }
 
         binding.start.setOnClickListener(v -> {
-            if (markerA!=null && markerB!=null){
+            if (markerA!=null && markerB!=null) {
+                String a = distanceInMeters+"";
+                String cc = a.substring(0, 2);
+                int c = Integer.parseInt(cc);
+                Stash.put("C", c);
                 new AlertDialog.Builder(requireContext())
                         .setTitle("Do you want to start this Journey?")
-                        .setMessage("This Journey cost 5 coins.")
+                        .setMessage("This Journey cost "+ cc +" coins.")
                         .setPositiveButton("Yes", (dialog, which) -> {
                             if (coins >= 5) {
-                                database.userDAO().update(userModel.getID(), (coins-5) );
-
+                                database.userDAO().update(userModel.getID(), (coins-c) );
                                 new Handler().postDelayed(() -> {
                                     dialog.dismiss();
                                     binding.message.setText("Your Journey is Started. You can end your journey any time");
@@ -143,7 +157,8 @@ public class MapsFragment extends Fragment {
         binding.end.setOnClickListener(v -> {
             String start = Stash.getString(Constants.START);
             String end = Stash.getString(Constants.END);
-            JourneysModel journeysModel = new JourneysModel(userModel.getID(), start, end, 5);
+            int c = Stash.getInt("C");
+            JourneysModel journeysModel = new JourneysModel(userModel.getID(), start, end, c);
             database.journeyDAO().insert(journeysModel);
             Toast.makeText(requireContext(), "Journey Ended", Toast.LENGTH_SHORT).show();
             binding.message.setText("Select First Marker");
